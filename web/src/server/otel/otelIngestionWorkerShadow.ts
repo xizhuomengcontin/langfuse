@@ -112,11 +112,14 @@ export function startOtelIngestionWorkerAdmissionShadow(
 
   const startedAt = performance.now();
   let completed = false;
+  function stopTracking() {
+    res.off("finish", recordProcessingDuration);
+    res.off("close", stopTracking);
+  }
   function recordProcessingDuration() {
     if (completed) return;
     completed = true;
-    res.off("finish", recordProcessingDuration);
-    res.off("close", recordProcessingDuration);
+    stopTracking();
     const processingDurationMs = Math.max(
       1,
       Math.round(performance.now() - startedAt),
@@ -129,7 +132,8 @@ export function startOtelIngestionWorkerAdmissionShadow(
   }
 
   res.once("finish", recordProcessingDuration);
-  res.once("close", recordProcessingDuration);
+  // A client disconnect does not mean inline processing has completed.
+  res.once("close", stopTracking);
 }
 
 async function runWorkerPreload(): Promise<void> {
