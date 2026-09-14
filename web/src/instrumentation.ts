@@ -34,4 +34,13 @@ export async function register() {
   if (isNodeRuntime && isInitLoadingEnabled) {
     await import("./initialize");
   }
+
+  if (
+    isNodeRuntime &&
+    process.env.LANGFUSE_OTEL_INGESTION_WORKER_SHADOW_ENABLED === "true"
+  ) {
+    const { preloadOtelIngestionWorkerShadow } =
+      await import("./server/otel/otelIngestionWorkerShadow");
+    await preloadOtelIngestionWorkerShadow();
+  }
 }
